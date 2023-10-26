@@ -1,48 +1,44 @@
-import tkinter as tk
 from tkinter import ttk
+import tkinter as tk
 import sqlite3
 
 
-# класс главного окна
+# основной класс
 class Main(tk.Frame):
+
+    """
+    Класс главного окна.
+    Инициализатор __init__ здесь принимает в параметры
+    объект класса tk.Tk()
+    """
+
     def __init__(self, root):
         super().__init__(root)
-        self.init_main()
+        self.base_init()
         self.db = db
         self.view_records()
 
-    # хранение и инициализация объектов GUI
-    def init_main(self):
-        # создаем панель инструментов (тулбар)
-        # bg - фон
-        # bd - границы
+    # объекты GUI
+    def base_init(self):
         toolbar = tk.Frame(bg='#d7d8e0', bd=2)
-        # упаковка
-        # side закрепляет вверху окна
-        # fill растягивает по X (горизонтали)
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
         self.add_img = tk.PhotoImage(file='./img/add.png')
         # создание кнопки добавления
-        # command - функция по нажатию
-        # bg - фон
-        # bd - граница
-        # compound - ориентация текста (tk.CENTER , tk.LEFT , tk.RIGHT , tk.TOP или tk.BOTTOM.)
-        # image - иконка кнопки
         btn_open_dialog = tk.Button(toolbar, bg='#d7d8e0', bd=0,
                                     image=self.add_img, command=self.open_dialog)
         # упаковка и выравнивание по левому краю
-        btn_open_dialog.pack(side=tk.LEFT)
+        btn_open_dialog.pack(side=tk.RIGHT)
 
         # создание кнопки изменения данных
         self.update_img = tk.PhotoImage(file='./img/update.png')
-        btn_edit_dialog = tk.Button(toolbar, bg='#d7d8e0', bd=0, 
+        btn_edit_dialog = tk.Button(toolbar, bg='#d7d8e0', bd=0,
                                     image=self.update_img, command=self.open_update_dialog)
-        btn_edit_dialog.pack(side=tk.LEFT)
+        btn_edit_dialog.pack(side=tk.RIGHT)
 
         # создание кнопки удаления записи
         self.delete_img = tk.PhotoImage(file='./img/delete.png')
-        btn_delete = tk.Button(toolbar, bg='#d7d8e0', bd=0, 
+        btn_delete = tk.Button(toolbar, bg='#d7d8e0', bd=0,
                                image=self.delete_img, command=self.delete_records)
         btn_delete.pack(side=tk.LEFT)
 
@@ -50,13 +46,13 @@ class Main(tk.Frame):
         self.search_img = tk.PhotoImage(file='./img/search.png')
         btn_search = tk.Button(toolbar, bg='#d7d8e0', bd=0,
                                image=self.search_img, command=self.open_search_dialog)
-        btn_search.pack(side=tk.LEFT)
+        btn_search.pack(side=tk.RIGHT)
 
         # кнопка обновления
         self.refresh_img = tk.PhotoImage(file='./img/refresh.png')
-        btn_refresh = tk.Button(toolbar, bg='#d7d8e0', bd=0, 
+        btn_refresh = tk.Button(toolbar, bg='#d7d8e0', bd=0,
                                 image=self.refresh_img, command=self.view_records)
-        btn_refresh.pack(side=tk.LEFT)
+        btn_refresh.pack(side=tk.RIGHT)
 
         # Добавляем Treeview
         # columns - столбцы
@@ -65,8 +61,6 @@ class Main(tk.Frame):
         self.tree = ttk.Treeview(self, columns=('ID', 'name', 'tel', 'email'),
                                  height=45, show='headings')
         # добавляем параметры колонкам
-        # width - ширина
-        # anchor - выравнивание текста в ячейке
         self.tree.column("ID", width=30, anchor=tk.CENTER)
         self.tree.column("name", width=300, anchor=tk.CENTER)
         self.tree.column("tel", width=150, anchor=tk.CENTER)
@@ -106,7 +100,7 @@ class Main(tk.Frame):
         # добавляем в виджет таблицы всю информацию из БД
         [self.tree.insert('', 'end', values=row)
          for row in self.db.c.fetchall()]
-        
+
     # удаление записей
     def delete_records(self):
         # цикл по выделенным записям
@@ -130,19 +124,50 @@ class Main(tk.Frame):
 
     # метод отвечающий за вызов дочернего окна
     def open_dialog(self):
-        Child()
+        RootChild()
 
     # метод отвечающий за вызов окна для изменения данных
     def open_update_dialog(self):
-        Update()
+        Updater()
 
     # метод отвечающий за вызов окна для поиска
     def open_search_dialog(self):
-        Search()
+        Searcher()
 
 # класс дочерних окон
 # Toplevel - окно верхнего уровня
-class Child(tk.Toplevel):
+
+
+# класс поиска записи
+class Searcher(tk.Toplevel):
+    def __init__(self):
+        super().__init__()
+        self.init_search()
+        self.view = app
+
+    def init_search(self):
+        self.title('Поиск')
+        self.geometry('300x100')
+        self.resizable(False, False)
+
+        label_search = tk.Label(self, text='Поиск')
+        label_search.place(x=50, y=20)
+
+        self.entry_search = ttk.Entry(self)
+        self.entry_search.place(x=105, y=20, width=150)
+
+        btn_cancel = ttk.Button(self, text='Закрыть', command=self.destroy)
+        btn_cancel.place(x=185, y=50)
+
+        btn_search = ttk.Button(self, text='Поиск')
+        btn_search.place(x=105, y=50)
+        btn_search.bind('<Button-1>',
+                        lambda event: self.view.search_records(self.entry_search.get()))
+        btn_search.bind('<Button-1>',
+                        lambda event: self.destroy(), add='+')
+
+
+class RootChild(tk.Toplevel):
     def __init__(self):
         super().__init__(root)
         self.init_child()
@@ -195,10 +220,10 @@ class Child(tk.Toplevel):
         self.btn_ok.bind('<Button-1>', lambda event: self.view.records(self.entry_name.get(),
                                                                        self.entry_email.get(),
                                                                        self.entry_tel.get()))
-    
+
 
 # класс окна для обновления, наследуемый от класса дочернего окна
-class Update(Child):
+class Updater(RootChild):
     def __init__(self):
         super().__init__()
         self.init_edit()
@@ -229,35 +254,6 @@ class Update(Child):
         self.entry_tel.insert(0, row[3])
 
 
-# класс поиска записи
-class Search(tk.Toplevel):
-    def __init__(self):
-        super().__init__()
-        self.init_search()
-        self.view = app
-
-    def init_search(self):
-        self.title('Поиск')
-        self.geometry('300x100')
-        self.resizable(False, False)
-
-        label_search = tk.Label(self, text='Поиск')
-        label_search.place(x=50, y=20)
-
-        self.entry_search = ttk.Entry(self)
-        self.entry_search.place(x=105, y=20, width=150)
-
-        btn_cancel = ttk.Button(self, text='Закрыть', command=self.destroy)
-        btn_cancel.place(x=185, y=50)
-
-        btn_search = ttk.Button(self, text='Поиск')
-        btn_search.place(x=105, y=50)
-        btn_search.bind('<Button-1>', 
-                        lambda event: self.view.search_records(self.entry_search.get()))
-        btn_search.bind('<Button-1>', 
-                        lambda event: self.destroy(), add='+')
-
-
 # класс БД
 class DB:
     def __init__(self):
@@ -276,8 +272,6 @@ class DB:
         self.c.execute('''INSERT INTO db (name, tel, email) VALUES (?, ?, ?)''',
                        (name, tel, email))
         self.conn.commit()
-
-
 
 
 if __name__ == '__main__':
